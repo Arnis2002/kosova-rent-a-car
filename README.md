@@ -29,7 +29,14 @@ This workspace has a portable PostgreSQL installation under `.local/postgres` an
 - `npm run typecheck --prefix apps/web` and `npm run build --prefix apps/web`.
 - `scripts/backup-restore.ps1` — isolated database dump/restore verification.
 
-See `docs/PROGRESS.md` for verified results and remaining dependencies. See `docs/LAUNCH.md` before any deployment. Nothing has been publicly deployed.
+See `docs/PROGRESS.md` for verified results and remaining dependencies. See `docs/LAUNCH.md` before enabling production services or accepting real bookings.
+
+## Public preview
+
+- Frontend: https://kosova-rent-a-car.vercel.app/en
+- Source: https://github.com/Arnis2002/kosova-rent-a-car
+
+The public Vercel deployment is a frontend preview with draft legal content and no real inventory photos. The ASP.NET API and PostgreSQL database still require a separate production host and provider configuration before public search, booking, supplier and administrator operations can be enabled.
 
 ## Documentation
 

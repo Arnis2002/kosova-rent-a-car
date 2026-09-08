@@ -25,7 +25,7 @@ Persist Data Protection keys in encrypted protected storage, including the certi
 3. Rehearse OIDC MFA and account isolation with actual staging identities.
 4. Rehearse infected/invalid upload rejection, private access denial and real SMTP retry/dead-letter handling.
 5. Confirm reviewed policy versions, translations, tax configuration, actual fleet documents and contact details.
-6. Obtain explicit publication authorization. This project has not been publicly deployed.
+6. Publication authorization was received for the frontend preview on 2026-09-09. Obtain separate approval after all remaining production dependencies are ready before enabling the live API and accepting real bookings.
 7. Deploy immutable versioned images, migrate, check health and perform a smoke booking with test records only. Monitor failure rates, expiry backlog, notification failures, document expiries and unresolved refunds.
 
 ## Backup and restoration

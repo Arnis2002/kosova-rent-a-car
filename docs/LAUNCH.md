@@ -1,6 +1,6 @@
 # Launch gate and external dependencies
 
-No public deployment, service purchase, domain registration, supplier contact or real charge has been performed.
+The frontend preview was published to Vercel on 2026-09-09. No backend service purchase, custom-domain registration, supplier contact or real charge has been performed.
 
 ## Must be supplied and verified before launch
 

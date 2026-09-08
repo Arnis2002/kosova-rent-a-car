@@ -33,4 +33,4 @@ The repository includes configurable adapters for OIDC authorization-code login 
 
 ## External launch blockers
 
-Before a public launch, provide approved legal and tax text, professionally reviewed translations, supplier verification criteria, real supplier and vehicle records, exact-vehicle photos, production identity and MFA configuration, an eligible payment provider, email delivery credentials, private object storage, malware scanning, hosting, backups and production secrets. No public deployment has been performed.
+The frontend preview is public at `https://kosova-rent-a-car.vercel.app/en`. Before enabling real bookings, provide approved legal and tax text, professionally reviewed translations, supplier verification criteria, real supplier and vehicle records, exact-vehicle photos, production API and PostgreSQL hosting, identity and MFA configuration, an eligible payment provider, email delivery credentials, private object storage, malware scanning, backups and production secrets.
