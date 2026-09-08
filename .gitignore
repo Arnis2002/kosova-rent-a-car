@@ -1,0 +1,12 @@
+node_modules/
+.next/
+*.tsbuildinfo
+test-results/
+.vercel/
+bin/
+obj/
+.env
+.env.local
+artifacts/
+.local/
+TestResults/

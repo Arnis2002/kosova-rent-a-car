@@ -1,0 +1,53 @@
+name: Verify marketplace
+on: [push, pull_request]
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17.11
+        env:
+          POSTGRES_USER: kosova
+          POSTGRES_PASSWORD: ci-only-password
+          POSTGRES_DB: kosova_test
+        ports: ["5432:5432"]
+        options: --health-cmd "pg_isready -U kosova" --health-interval 5s --health-retries 10
+    env:
+      ASPNETCORE_ENVIRONMENT: Development
+      ConnectionStrings__Database: Host=127.0.0.1;Database=kosova_test;Username=kosova;Password=ci-only-password
+      DemoMode: "true"
+      DemoPassword: CI-demo-password-only-123
+      TestPaymentSecret: local-test-webhook-key-not-for-production
+      PGPASSWORD: ci-only-password
+      PGPORT: "5432"
+      TEST_API: http://127.0.0.1:5081
+      RateLimit__RequestsPerMinute: "2000"
+      RateLimit__AuthRequestsPerMinute: "100"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+      - run: npm ci --prefix apps/web
+      - run: dotnet test tests/Kosova.Tests
+      - run: npm run build --prefix apps/web
+      - run: dotnet run --project apps/api --no-launch-profile --urls http://127.0.0.1:5081 > /tmp/kosova-test-api.log 2>&1 &
+      - run: for i in $(seq 1 40); do curl -fsS http://127.0.0.1:5081/api/health && exit 0; sleep 1; done; exit 1
+      - run: node tests/integration.mjs
+        working-directory: apps/web
+      - run: dotnet run --project apps/api --no-build --no-launch-profile --urls http://127.0.0.1:5080 > /tmp/kosova-preview-api.log 2>&1 &
+      - run: npm run start --prefix apps/web > /tmp/kosova-web.log 2>&1 &
+      - run: npx playwright install --with-deps chromium
+        working-directory: apps/web
+      - run: npx playwright test
+        working-directory: apps/web
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: verification-artifacts
+          path: artifacts/

@@ -1,0 +1,48 @@
+services:
+  db:
+    image: postgres:17.11-alpine
+    environment:
+      POSTGRES_USER: kosova
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set a database password}
+      POSTGRES_DB: kosova
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U kosova -d kosova"]
+      interval: 5s
+      retries: 10
+  api:
+    build:
+      context: ..
+      dockerfile: infra/Api.Dockerfile
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ConnectionStrings__Database: Host=db;Database=kosova;Username=kosova;Password=${POSTGRES_PASSWORD}
+      DemoMode: "true"
+      DemoPassword: ${DEMO_PASSWORD:?Set a demo password}
+      TestPaymentSecret: ${TEST_PAYMENT_SECRET:?Set a test webhook secret}
+      WebOrigin: http://127.0.0.1:3000
+      PrivateStorage: /data/documents
+      DataProtection__Path: /data/keys
+    volumes:
+      - private_data:/data
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:5080:8080"
+  web:
+    build:
+      context: ..
+      dockerfile: infra/Web.Dockerfile
+      args:
+        API_ORIGIN: http://api:8080
+    ports:
+      - "127.0.0.1:3000:3000"
+    depends_on:
+      - api
+volumes:
+  pgdata:
+  private_data:
