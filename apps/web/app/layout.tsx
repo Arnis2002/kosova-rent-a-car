@@ -1,4 +1,6 @@
 import type { Metadata } from 'next';
 import './globals.css';
-export const metadata: Metadata = {title:{default:'Kosova Rent-A-Car | Find your way around Kosovo',template:'%s | Kosova Rent-A-Car'},description:'Compare exact vehicles from professional rental businesses. Start with Prishtina and Prishtina International Airport.',robots:{index:false,follow:false}};
+import './brand.css';
+import './availability.css';
+export const metadata: Metadata = {applicationName:'Rent Kosova',title:{default:'Rent Kosova | Clear choices for the road ahead',template:'%s | Rent Kosova'},description:'Compare exact rental vehicles, total prices and conditions from professional rental companies in Kosovo.',icons:{icon:'/icon.svg'},openGraph:{title:'Rent Kosova',description:'Clear choices for the road ahead.',type:'website',locale:'en_US',siteName:'Rent Kosova'},robots:{index:false,follow:false}};
 export default function RootLayout({children}:{children:React.ReactNode}) { return <html lang="en"><body>{children}</body></html>; }

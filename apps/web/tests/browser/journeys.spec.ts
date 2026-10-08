@@ -2,6 +2,12 @@ import {test,expect} from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
 import {readFileSync} from 'node:fs';
 const password=process.env.DemoPassword||readFileSync('../../.local/runtime/demo-password.txt','utf8').trim();
+test('Rent Kosova identity is exposed through the public navigation and document metadata',async({page})=>{
+ await page.goto('/en');
+ await expect(page).toHaveTitle(/Rent Kosova/);
+ await expect(page.getByRole('link',{name:'Rent Kosova',exact:true}).first()).toBeVisible();
+ await expect(page.getByText('Clear choices for the road ahead.',{exact:true})).toBeVisible();
+});
 test('English customer request connects to supplier acceptance and guest status',async({page,browser})=>{
  await page.goto('/en'); await expect(page.getByRole('heading',{name:/Land. Pick up./})).toBeVisible();
  await page.getByRole('button',{name:'Find my car'}).click();await expect(page.getByRole('heading',{name:'Cars for your journey'})).toBeVisible();

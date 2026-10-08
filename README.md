@@ -1,6 +1,8 @@
-# Kosova Rent-A-Car
+# Rent Kosova
 
-A modular rental marketplace: Next.js 16 / React 19 / TypeScript, ASP.NET Core 10, PostgreSQL 17. Professional rental businesses, exact vehicles, request-to-book. No private-owner rentals or instant booking.
+**Clear choices for the road ahead.**
+
+A modular car-rental marketplace for Kosovo: Next.js 16 / React 19 / TypeScript, ASP.NET Core 10, PostgreSQL 17. Professional rental businesses, exact vehicles, request-to-book. No private-owner rentals or instant booking.
 
 ## Local preview
 
@@ -36,10 +38,14 @@ See `docs/PROGRESS.md` for verified results and remaining dependencies. See `doc
 - Frontend: https://kosova-rent-a-car.vercel.app/en
 - Source: https://github.com/Arnis2002/kosova-rent-a-car
 
+These are legacy technical addresses. The customer-facing platform name is Rent Kosova; renaming external deployment and repository addresses requires separate provider changes.
+
 The public Vercel deployment is a frontend preview with draft legal content and no real inventory photos. The ASP.NET API and PostgreSQL database still require a separate production host and provider configuration before public search, booking, supplier and administrator operations can be enabled.
 
 ## Documentation
 
+- `docs/BRAND.md`: Rent Kosova identity, voice, assets and usage rules.
+- `docs/AVAILABILITY.md`: company fleet management, calendar editing and customer availability.
 - `docs/ARCHITECTURE.md`: relationships, pricing, status transitions and invariants.
 - `docs/API.md`: API contracts and authorization.
 - `docs/OPERATIONS.md`: supplier/admin operating procedures.

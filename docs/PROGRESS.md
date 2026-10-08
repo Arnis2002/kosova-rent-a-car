@@ -1,6 +1,6 @@
 # Implementation progress
 
-Working brand: Kosova Rent-A-Car. Scope: professional suppliers, exact vehicles and request-to-book. Photo areas intentionally remain empty until real inventory photos are uploaded and approved.
+Brand: Rent Kosova. Scope: professional suppliers, exact vehicles and request-to-book. Photo areas intentionally remain empty until real inventory photos are uploaded and approved.
 
 ## Verified milestones
 
@@ -33,4 +33,4 @@ The repository includes configurable adapters for OIDC authorization-code login 
 
 ## External launch blockers
 
-The frontend preview is public at `https://kosova-rent-a-car.vercel.app/en`. Before enabling real bookings, provide approved legal and tax text, professionally reviewed translations, supplier verification criteria, real supplier and vehicle records, exact-vehicle photos, production API and PostgreSQL hosting, identity and MFA configuration, an eligible payment provider, email delivery credentials, private object storage, malware scanning, backups and production secrets.
+The Rent Kosova frontend preview remains at the legacy technical address `https://kosova-rent-a-car.vercel.app/en`. Before enabling real bookings, provide approved legal and tax text, professionally reviewed translations, supplier verification criteria, real supplier and vehicle records, exact-vehicle photos, production API and PostgreSQL hosting, identity and MFA configuration, an eligible payment provider, email delivery credentials, private object storage, malware scanning, backups and production secrets.

@@ -43,7 +43,7 @@ public sealed class NotificationDelivery(IConfiguration configuration,GuestSecre
         var locale=job.S("locale");var text=Text(job.S("status"),locale);
         if(options.Demo)return;
         var link=configuration["WebOrigin"]+"/"+locale+"/booking/"+booking.S("id")+"#"+secrets.Unprotect(booking.S("access_secret"));
-        var message=new MimeMessage();message.From.Add(MailboxAddress.Parse(configuration["Email:From"]!));message.To.Add(MailboxAddress.Parse(booking.Obj("customer").S("email")));message.Subject="Kosova Rent-A-Car · "+text;message.MessageId=job.S("id")+"@"+new System.Net.Mail.MailAddress(configuration["Email:From"]!).Host;
+        var message=new MimeMessage();message.From.Add(MailboxAddress.Parse(configuration["Email:From"]!));message.To.Add(MailboxAddress.Parse(booking.Obj("customer").S("email")));message.Subject="Rent Kosova · "+text;message.MessageId=job.S("id")+"@"+new System.Net.Mail.MailAddress(configuration["Email:From"]!).Host;
         message.Body=new TextPart("plain"){Text=text+"\n\n"+link+"\n\n"+(locale=="sq"?"Lidhje private. Mos e ndani.":locale=="de"?"Privater Link. Nicht weitergeben.":"Private link. Do not share.")};
         using var client=new SmtpClient();client.Timeout=15000;await client.ConnectAsync(configuration["Email:Host"]!,configuration.GetValue("Email:Port",587),SecureSocketOptions.StartTls);await client.AuthenticateAsync(configuration["Email:Username"]!,configuration["Email:Password"]!);await client.SendAsync(message);await client.DisconnectAsync(true);
     }

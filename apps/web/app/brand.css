@@ -1,0 +1,33 @@
+:root{
+ --ink:#132a3a;
+ --muted:#5f6f7a;
+ --green:#2457d6;
+ --green-dark:#173f9e;
+ --tint:#eaf0f5;
+ --line:#d6e0e8;
+ --paper:#f7f8f5;
+ --white:#fff;
+ --brand-blue:#2457d6;
+ --brand-navy:#132a3a;
+ --brand-gold:#f2b544;
+ --shadow:0 18px 48px #132a3a12;
+ font-family:"Avenir Next","Segoe UI",Arial,sans-serif;
+}
+
+button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible,summary:focus-visible{outline-color:#2457d6}
+.brand{letter-spacing:0}
+.brand-lockup{display:inline-flex;align-items:center;gap:11px;color:var(--brand-navy)}
+.brand-symbol{width:41px;height:41px;display:block;border-radius:11px;box-shadow:0 8px 20px #2457d625}
+.brand-name{display:inline-flex;align-items:baseline;gap:5px;font-size:20px;letter-spacing:-.7px;line-height:1}
+.brand-name strong{font-weight:750}.brand-name span{font-weight:450}
+.brand-lockup-inverse{color:#fff}.brand-lockup-compact .brand-symbol{margin:0}
+.brand-line{color:var(--brand-blue)!important;font-weight:650;margin-bottom:6px!important}
+.demo-banner{background:#eaf0f5;color:#314b5d;border-bottom:1px solid #d6e0e8}
+.eyebrow{color:var(--brand-blue)}.eyebrow>span{background:var(--brand-gold)}
+.step-number{border-color:#b8c8e7;color:var(--brand-blue)}
+.airport-panel{background:linear-gradient(135deg,#edf3fb,#f7f8f5)}
+.workspace-nav>button.selected{color:var(--brand-blue)}
+
+@media(max-width:1150px){.brand-name{font-size:17px}.brand-symbol{width:38px;height:38px}}
+@media(max-width:600px){.brand-name{font-size:16px}.brand-symbol{width:34px;height:34px}}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;transition-duration:.01ms!important;animation-duration:.01ms!important;animation-iteration-count:1!important}}
