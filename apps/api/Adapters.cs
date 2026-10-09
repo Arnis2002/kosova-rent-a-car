@@ -10,6 +10,11 @@ using System.Net.Sockets;
 using System.Buffers.Binary;
 namespace Kosova;
 public interface IPrivateObjects { Task Put(string key,byte[] bytes,string contentType); Task<byte[]> Get(string key); }
+public sealed class UnavailablePrivateObjects: IPrivateObjects
+{
+    public Task Put(string key,byte[] bytes,string contentType)=>Task.FromException(new RuleException("uploads_unavailable",503));
+    public Task<byte[]> Get(string key)=>Task.FromException<byte[]>(new RuleException("uploads_unavailable",503));
+}
 public sealed class LocalPrivateObjects(RuntimeOptions options):IPrivateObjects
 {
     public Task Put(string key,byte[] bytes,string contentType){Directory.CreateDirectory(options.PrivateStorage);return File.WriteAllBytesAsync(Path.Combine(options.PrivateStorage,key),bytes);}
@@ -41,7 +46,7 @@ public sealed class NotificationDelivery(IConfiguration configuration,GuestSecre
     public async Task Send(JsonObject job,JsonObject booking)
     {
         var locale=job.S("locale");var text=Text(job.S("status"),locale);
-        if(options.Demo)return;
+        if(options.Demo||options.HostedTest)return;
         var link=configuration["WebOrigin"]+"/"+locale+"/booking/"+booking.S("id")+"#"+secrets.Unprotect(booking.S("access_secret"));
         var message=new MimeMessage();message.From.Add(MailboxAddress.Parse(configuration["Email:From"]!));message.To.Add(MailboxAddress.Parse(booking.Obj("customer").S("email")));message.Subject="Rent Kosova · "+text;message.MessageId=job.S("id")+"@"+new System.Net.Mail.MailAddress(configuration["Email:From"]!).Host;
         message.Body=new TextPart("plain"){Text=text+"\n\n"+link+"\n\n"+(locale=="sq"?"Lidhje private. Mos e ndani.":locale=="de"?"Privater Link. Nicht weitergeben.":"Private link. Do not share.")};

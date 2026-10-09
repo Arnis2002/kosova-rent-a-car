@@ -4,11 +4,14 @@ using System.Text.Json.Nodes;
 using Microsoft.AspNetCore.Identity;
 using System.Threading.RateLimiting;
 var builder=WebApplication.CreateBuilder(args);
-var demo=builder.Configuration.GetValue<bool>("DemoMode");
-Hosting.Configure(builder,demo);
+if(!string.IsNullOrWhiteSpace(builder.Configuration["PORT"])) builder.WebHost.UseUrls($"http://0.0.0.0:{builder.Configuration["PORT"]}");
+var mode=Hosting.ResolveMode(builder);
+Hosting.Configure(builder,mode);
+var runtimeOptions=new RuntimeOptions(mode,builder.Configuration["PrivateStorage"]??Path.Combine(builder.Environment.ContentRootPath,"../../.local/documents"));
+var demo=runtimeOptions.Demo;
 var connection=builder.Configuration.GetConnectionString("Database")??throw new InvalidOperationException("ConnectionStrings__Database is required");
 builder.Services.AddSingleton(NpgsqlDataSource.Create(connection)); builder.Services.AddSingleton<Store>(); builder.Services.AddSingleton<BookingService>();
-builder.Services.AddHostedService<OperationsWorker>(); builder.Services.AddSingleton(new RuntimeOptions(demo,builder.Configuration["PrivateStorage"]??Path.Combine(builder.Environment.ContentRootPath,"../../.local/documents")));
+builder.Services.AddHostedService<OperationsWorker>(); builder.Services.AddSingleton(runtimeOptions);
 builder.Services.AddRateLimiter(o=> { o.RejectionStatusCode=429; o.GlobalLimiter=PartitionedRateLimiter.Create<HttpContext,string>(ctx=>RateLimitPartition.GetFixedWindowLimiter(ctx.Connection.RemoteIpAddress?.ToString()??"unknown",_=>new FixedWindowRateLimiterOptions{PermitLimit=builder.Configuration.GetValue("RateLimit:RequestsPerMinute",120),Window=TimeSpan.FromMinutes(1),QueueLimit=0})); o.AddPolicy("auth",ctx=>RateLimitPartition.GetFixedWindowLimiter(ctx.Connection.RemoteIpAddress?.ToString()??"unknown",_=>new FixedWindowRateLimiterOptions{PermitLimit=builder.Configuration.GetValue("RateLimit:AuthRequestsPerMinute",10),Window=TimeSpan.FromMinutes(1)})); });
 var app=builder.Build();
 app.Use(async(ctx,next)=> {
@@ -23,18 +26,26 @@ app.Use(async(ctx,next)=> {
     catch(Exception e) { app.Logger.LogError("Request failed: {Type}; trace {Trace}",e.GetType().Name,ctx.TraceIdentifier); ctx.Response.StatusCode=500; await ctx.Response.WriteAsJsonAsync(new{error="server_error",trace=ctx.TraceIdentifier}); }
 });
 app.UseRateLimiter();
-if(!demo) app.UseAuthentication();
-app.MapGet("/api/auth/config",()=>Results.Ok(new{demo,oidc=!demo}));
-app.MapGet("/api/auth/oidc",()=> !demo?Results.Challenge(new Microsoft.AspNetCore.Authentication.AuthenticationProperties(),["oidc"]):Results.NotFound());
+if(mode!=RuntimeMode.DevelopmentDemo) app.UseAuthentication();
+app.MapGet("/api/auth/config",()=>Results.Ok(new{demo,oidc=mode==RuntimeMode.Production,supabase=mode==RuntimeMode.HostedTest}));
+app.MapGet("/api/auth/oidc",()=> mode==RuntimeMode.Production?Results.Challenge(new Microsoft.AspNetCore.Authentication.AuthenticationProperties(),["oidc"]):Results.NotFound());
 await using(var c=await app.Services.GetRequiredService<Store>().Open()) {
-    await Store.Exec(c,"SELECT pg_advisory_lock(884021)");
-    try { var exists=await Store.One(c,"SELECT to_regclass('public.schema_versions') IS NOT NULL AS exists"); if(!exists.B("exists")) await Store.Exec(c,await File.ReadAllTextAsync(Path.Combine(app.Environment.ContentRootPath,"Sql/001_initial.sql"))); if((await Store.Query(c,"SELECT version FROM schema_versions WHERE version=2")).Count==0) await Store.Exec(c,await File.ReadAllTextAsync(Path.Combine(app.Environment.ContentRootPath,"Sql/002_operations.sql"))); if((await Store.Query(c,"SELECT version FROM schema_versions WHERE version=3")).Count==0) await Store.Exec(c,await File.ReadAllTextAsync(Path.Combine(app.Environment.ContentRootPath,"Sql/003_availability.sql"))); if(demo) await Seed.Run(c,builder.Configuration["DemoPassword"]??throw new InvalidOperationException("DemoPassword is required for explicit seed")); }
-    finally { await Store.Exec(c,"SELECT pg_advisory_unlock(884021)"); }
-    if(!demo && (await Store.Query(c,"SELECT id FROM users LIMIT 1")).Count==0) { var subject=builder.Configuration["BootstrapAdminSubject"]??throw new InvalidOperationException("BootstrapAdminSubject required for first start");var email=builder.Configuration["BootstrapAdminEmail"]??throw new InvalidOperationException("BootstrapAdminEmail required for first start");await Store.Exec(c,"INSERT INTO users(id,email,password_hash,role,external_subject) VALUES($1,$2,'oidc-only','admin',$3)",Guid.NewGuid(),email,subject); }
-    if(!demo && (await Store.Query(c,"SELECT id FROM suppliers WHERE demo=true LIMIT 1")).Count>0) throw new InvalidOperationException("Production requires a database without demonstration inventory");
+    if(mode==RuntimeMode.HostedTest)
+    {
+        var schema=await Store.One(c,HostedSchema.ReadinessSql);
+        HostedSchema.EnsureReady(schema.I("version"),schema.B("has_btree_gist"));
+    }
+    else
+    {
+        await Store.Exec(c,"SELECT pg_advisory_lock(884021)");
+        try { var exists=await Store.One(c,"SELECT to_regclass('public.schema_versions') IS NOT NULL AS exists"); if(!exists.B("exists")) await Store.Exec(c,await File.ReadAllTextAsync(Path.Combine(app.Environment.ContentRootPath,"Sql/001_initial.sql"))); if((await Store.Query(c,"SELECT version FROM schema_versions WHERE version=2")).Count==0) await Store.Exec(c,await File.ReadAllTextAsync(Path.Combine(app.Environment.ContentRootPath,"Sql/002_operations.sql"))); if((await Store.Query(c,"SELECT version FROM schema_versions WHERE version=3")).Count==0) await Store.Exec(c,await File.ReadAllTextAsync(Path.Combine(app.Environment.ContentRootPath,"Sql/003_availability.sql"))); if((await Store.Query(c,"SELECT version FROM schema_versions WHERE version=4")).Count==0) await Store.Exec(c,await File.ReadAllTextAsync(Path.Combine(app.Environment.ContentRootPath,"Sql/004_supplier_applications.sql"))); if((await Store.Query(c,"SELECT version FROM schema_versions WHERE version=5")).Count==0) await Store.Exec(c,await File.ReadAllTextAsync(Path.Combine(app.Environment.ContentRootPath,"Sql/005_database_advisories.sql"))); if((await Store.Query(c,"SELECT version FROM schema_versions WHERE version=6")).Count==0) await Store.Exec(c,await File.ReadAllTextAsync(Path.Combine(app.Environment.ContentRootPath,"Sql/006_extension_schema.sql"))); if(demo) await Seed.Run(c,builder.Configuration["DemoPassword"]??throw new InvalidOperationException("DemoPassword is required for explicit seed")); }
+        finally { await Store.Exec(c,"SELECT pg_advisory_unlock(884021)"); }
+    }
+    if(mode==RuntimeMode.Production && (await Store.Query(c,"SELECT id FROM users LIMIT 1")).Count==0) { var subject=builder.Configuration["BootstrapAdminSubject"]??throw new InvalidOperationException("BootstrapAdminSubject required for first start");var email=builder.Configuration["BootstrapAdminEmail"]??throw new InvalidOperationException("BootstrapAdminEmail required for first start");await Store.Exec(c,"INSERT INTO users(id,email,password_hash,role,external_subject) VALUES($1,$2,'oidc-only','admin',$3)",Guid.NewGuid(),email,subject); }
+    if(mode==RuntimeMode.Production && (await Store.Query(c,"SELECT id FROM suppliers WHERE demo=true LIMIT 1")).Count>0) throw new InvalidOperationException("Production requires a database without demonstration inventory");
 }
 if(args.Contains("--migrate-only")) return;
-app.MapGet("/api/health",async(Store db)=> { await using var c=await db.Open(); await Store.Exec(c,"SELECT 1"); return Results.Ok(new{status="ok",demo}); });
+app.MapGet("/api/health",async(Store db)=> { await using var c=await db.Open(); await Store.Exec(c,"SELECT 1"); return Results.Ok(new{status="ok",demo,test=mode==RuntimeMode.HostedTest}); });
 app.MapGet("/api/locations",async(Store db)=> { await using var c=await db.Open(); return await Store.Query(c,"SELECT * FROM locations ORDER BY id"); });
 app.MapPost("/api/time",(JsonObject input)=>Results.Ok(new{start=Rules.LocalInstant(input.Required("start")),end=Rules.LocalInstant(input.Required("end"))}));
 app.MapPost("/api/auth/login",async(HttpContext ctx,Store db,JsonObject input)=> {
@@ -64,8 +75,12 @@ app.MapGet("/api/bookings/{id:guid}",async(HttpContext ctx,Store db,Guid id)=> {
 });
 app.MapPost("/api/bookings/{id:guid}/transition",(HttpContext ctx,BookingService service,Guid id,JsonObject input)=>service.Transition(ctx,id,input));
 app.MapPost("/api/support",async(Store db,JsonObject input)=> { await using var c=await db.Open(); var email=input.Required("email",254); if(!System.Net.Mail.MailAddress.TryCreate(email,out _)) throw new RuleException("invalid_email"); var message=input.Required("message",4000); var id=Guid.NewGuid(); await Store.Exec(c,"INSERT INTO operations(id,supplier_id,kind,data) SELECT $1,id,'support',$2::jsonb FROM suppliers WHERE status='approved' ORDER BY id LIMIT 1",id,new JsonObject{["email"]=email,["message"]=message}.ToJsonString()); return Results.Ok(new{id,status="received"}); }).RequireRateLimiting("auth");
-Management.Map(app); AvailabilityManagement.Map(app); Payments.Map(app); CustomerOperations.Map(app); Media.Map(app);
+Management.Map(app); AvailabilityManagement.Map(app); Payments.Map(app); CustomerOperations.Map(app); Media.Map(app); PartnerApplications.Map(app);
 app.Run();
-public record RuntimeOptions(bool Demo,string PrivateStorage);
+public record RuntimeOptions(RuntimeMode Mode,string PrivateStorage)
+{
+    public bool Demo=>Mode==RuntimeMode.DevelopmentDemo;
+    public bool HostedTest=>Mode==RuntimeMode.HostedTest;
+}
 public partial class Program { }
 

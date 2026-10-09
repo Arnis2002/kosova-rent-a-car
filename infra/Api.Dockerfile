@@ -7,6 +7,7 @@ WORKDIR /app
 COPY --from=build /out .
 COPY apps/api/Sql/ ./Sql/
 ENV ASPNETCORE_URLS=http://+:8080
+ENV PORT=8080
 RUN mkdir -p /data/keys /data/documents && chown -R $APP_UID /data
 USER $APP_UID
 EXPOSE 8080

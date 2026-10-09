@@ -1,0 +1,18 @@
+BEGIN;
+ALTER FUNCTION public.immutable_quote() SET search_path = public, pg_temp;
+CREATE INDEX booking_history_booking ON booking_history(booking_id);
+CREATE INDEX bookings_supplier ON bookings(supplier_id);
+CREATE INDEX bookings_vehicle ON bookings(vehicle_id);
+CREATE INDEX documents_supplier ON documents(supplier_id);
+CREATE INDEX notification_jobs_booking ON notification_jobs(booking_id);
+CREATE INDEX operations_supplier ON operations(supplier_id);
+CREATE INDEX payment_events_payment ON payment_events(payment_id);
+CREATE INDEX payments_booking ON payments(booking_id);
+CREATE INDEX quotes_vehicle ON quotes(vehicle_id);
+CREATE INDEX sessions_user ON sessions(user_id);
+CREATE INDEX supplier_applications_reviewer ON supplier_applications(reviewed_by);
+CREATE INDEX supplier_applications_supplier ON supplier_applications(supplier_id);
+CREATE INDEX users_supplier ON users(supplier_id);
+CREATE INDEX vehicles_supplier ON vehicles(supplier_id);
+INSERT INTO schema_versions(version) VALUES (5);
+COMMIT;

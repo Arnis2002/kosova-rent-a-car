@@ -1,0 +1,23 @@
+services:
+  - type: web
+    name: rent-kosova-api
+    runtime: docker
+    plan: free
+    dockerfilePath: ./infra/Api.Dockerfile
+    dockerContext: .
+    healthCheckPath: /api/health
+    envVars:
+      - key: RuntimeMode
+        value: HostedTest
+      - key: ASPNETCORE_ENVIRONMENT
+        value: Production
+      - key: PORT
+        value: "8080"
+      - key: WebOrigin
+        sync: false
+      - key: ConnectionStrings__Database
+        sync: false
+      - key: Supabase__Url
+        value: https://jsjscgamwpblgzzkftuo.supabase.co
+      - key: Supabase__PublishableKey
+        sync: false

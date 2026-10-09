@@ -65,6 +65,7 @@ public static class Management
         });
         app.MapPost("/api/manage/documents",async(HttpContext ctx,Store db,RuntimeOptions opts,IPrivateObjects objects,UploadScanner scanner)=> {
             var(c,a)=await Session(ctx,db); await using var scope=c;
+            if(opts.HostedTest) throw new RuleException("uploads_unavailable",503);
             if(ctx.Request.ContentLength>6*1024*1024) throw new RuleException("file_too_large",413);
             var form=await ctx.Request.ReadFormAsync(); if(!Guid.TryParse(form["supplierId"],out var sid)) throw new RuleException("invalid_id"); Security.Scope(a,sid);
             Guid? vid=Guid.TryParse(form["vehicleId"],out var parsed)?parsed:null;

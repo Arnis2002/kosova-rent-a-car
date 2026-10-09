@@ -11,10 +11,23 @@ public static class Security
     public static string Hash(string s)=>Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(s)));
     public static async Task<Actor> Actor(HttpContext ctx,NpgsqlConnection c)
     {
-        if(!ctx.Request.Cookies.TryGetValue("kr_session",out var token)) throw new RuleException("unauthorized",401);
-        var rows=await Store.Query(c,"SELECT u.id,u.role,u.supplier_id FROM sessions s JOIN users u ON u.id=s.user_id WHERE s.token_hash=$1 AND s.expires_at>now()",Hash(token));
-        if(rows.Count==0) throw new RuleException("unauthorized",401); var u=rows[0]; return new Actor(u.G("id"),u.S("role"),u["supplier_id"]==null?null:u.G("supplier_id"));
+        if(ctx.Request.Cookies.TryGetValue("kr_session",out var token))
+        {
+            var sessions=await Store.Query(c,"SELECT u.id,u.role,u.supplier_id FROM sessions s JOIN users u ON u.id=s.user_id WHERE s.token_hash=$1 AND s.expires_at>now()",Hash(token));
+            if(sessions.Count>0)return FromUser(sessions[0]);
+        }
+        if(ctx.User.Identity?.IsAuthenticated==true&&ctx.User.Identity.AuthenticationType=="SupabaseBearer"&&ctx.User.FindFirst("email_verified")?.Value=="true")
+        {
+            var subject=ctx.User.FindFirst("sub")?.Value;
+            if(Guid.TryParse(subject,out _))
+            {
+                var users=await Store.Query(c,"SELECT id,role,supplier_id FROM users WHERE external_subject=$1 AND password_hash<>'revoked'",subject!);
+                if(users.Count==1)return FromUser(users[0]);
+            }
+        }
+        throw new RuleException("unauthorized",401);
     }
+    static Actor FromUser(JsonObject u)=>new(u.G("id"),u.S("role"),u["supplier_id"]==null?null:u.G("supplier_id"));
     public static void Scope(Actor a,Guid supplier,bool owner=false) { if(!a.Admin&&(a.SupplierId!=supplier||(owner&&a.Role!="owner"))) throw new RuleException("forbidden",403); }
     public static void Admin(Actor a) { if(!a.Admin) throw new RuleException("forbidden",403); }
     public static async Task<JsonObject> Booking(HttpContext ctx,NpgsqlConnection c,Guid id,bool locked=false)

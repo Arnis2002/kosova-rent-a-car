@@ -20,7 +20,7 @@ public sealed class OperationsWorker(Store db,RuntimeOptions options,Notificatio
         }
         for(int i=0;i<20;i++) {
             await using var c=await db.Open();await using var tx=await c.BeginTransactionAsync();var jobs=await Store.Query(c,"SELECT * FROM notification_jobs WHERE state='pending' AND available_at<=now() ORDER BY available_at FOR UPDATE SKIP LOCKED LIMIT 1");if(jobs.Count==0)break;var job=jobs[0];
-            try {var b=await Store.One(c,"SELECT * FROM bookings WHERE id=$1",job.G("booking_id"));await delivery.Send(job,b);await Store.Exec(c,"UPDATE notification_jobs SET state=$2,attempts=attempts+1,delivered_at=now() WHERE id=$1",job.G("id"),options.Demo?"development_mailbox":"delivered");}
+            try {var b=await Store.One(c,"SELECT * FROM bookings WHERE id=$1",job.G("booking_id"));await delivery.Send(job,b);await Store.Exec(c,"UPDATE notification_jobs SET state=$2,attempts=attempts+1,delivered_at=now() WHERE id=$1",job.G("id"),options.Demo?"development_mailbox":options.HostedTest?"suppressed_test":"delivered");}
             catch(Exception e){int attempt=job.I("attempts")+1;await Store.Exec(c,"UPDATE notification_jobs SET attempts=$2,state=$3,available_at=now()+make_interval(secs=>$4) WHERE id=$1",job.G("id"),attempt,attempt>=8?"failed":"pending",Math.Min(3600,(int)Math.Pow(2,attempt)*15));logger.LogWarning("Notification {Job} attempt {Attempt} failed: {Type}",job.S("id"),attempt,e.GetType().Name);}
             await tx.CommitAsync();
         }
